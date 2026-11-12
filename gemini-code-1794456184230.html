@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Astronaut Flight Clearance Exam</title>
+  <!-- html2pdf.js library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    :root {
+      --bg-color: #0b0d17;
+      --card-bg: #151932;
+      --accent-color: #00d2ff;
+      --text-color: #e0e6ed;
+      --success-color: #00ff88;
+      --danger-color: #ff4757;
+      --warning-color: #ffb700;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+    }
+
+    header {
+      position: relative;
+      text-align: center;
+      padding: 20px;
+      border-bottom: 2px solid var(--accent-color);
+    }
+
+    .surrender-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: var(--danger-color);
+      color: #fff;
+      font-weight: bold;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: none;
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .surrender-btn:hover {
+      background-color: #ff6b81;
+      transform: scale(1.05);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* Registration Card */
+    .reg-card {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 30px;
+      margin: 40px auto;
+      max-width: 500px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+      border: 1px solid var(--accent-color);
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+      text-align: left;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      box-sizing: border-box;
+      background: #0d1127;
+      border: 1px solid var(--accent-color);
+      color: white;
+      padding: 10px;
+      border-radius: 4px;
+      font-family: inherit;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    /* Section Styling */
+    .exam-section {
+      background: var(--card-bg);
+      border-radius: 8px;
+      padding: 25px;
+      margin: 30px 0;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+      display: none;
+    }
+
+    .exam-section.active {
+      display: block;
+    }
+
+    h2 {
+      color: var(--accent-color);
+      border-bottom: 1px solid #2a325c;
+      padding-bottom: 10px;
+    }
+
+    .hud-display {
+      display: flex;
+      justify-content: space-between;
+      background: #0d1127;
+      padding: 12px 20px;
+      border-radius: 5px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      border: 1px solid #2a325c;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .problem-card {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #1c2242;
+      border-left: 4px solid var(--accent-color);
+      border-radius: 0 6px 6px 0;
+    }
+
+    input[type="text"], input[type="number"] {
+      background: #0d1127;
+      border: 1px solid var(--accent-color);
+      color: white;
+      padding: 8px;
+      border-radius: 4px;
+      width: 100%;
+      max-width: 280px;
+      margin-top: 8px;
+    }
+
+    .format-hint {
+      font-size: 0.8rem;
+      color: var(--warning-color);
+      margin-top: 4px;
+    }
+
+    /* Drag and Drop List */
+    .celestial-list {
+      list-style: none;
+      padding: 0;
+      width: 100%;
+    }
+
+    .celestial-item {
+      background: #252c54;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 6px;
+      cursor: grab;
+      border: 1px dashed var(--accent-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+
+    .celestial-item:active {
+      cursor: grabbing;
+    }
+
+    .celestial-item.dragging {
+      opacity: 0.4;
+      background: #1e2447;
+    }
+
+    .rank-badge {
+      background: var(--accent-color);
+      color: #000;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+
+    .btn-submit {
+      background: var(--accent-color);
+      color: #000;
+      font-weight: bold;
+      font-size: 1.1rem;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: block;
+      margin: 20px auto 0;
+      transition: transform 0.2s, background-color 0.2s;
+    }
+
+    .btn-submit:hover {
+      background: var(--success-color);
+      transform: scale(1.03);
+    }
+
+    .results-modal {
+      display: none;
+      background: #0d1127;
+      border: 2px solid var(--accent-color);
+      border-radius: 8px;
+      padding: 25px;
+      margin-top: 30px;
+      text-align: center;
+    }
+
+    /* HIGH-CONTRAST STRUCTURED PDF LAYOUT */
+    #pdf-template {
+      display: none;
+      background: #ffffff !important;
+      color: #000000 !important;
+      padding: 20px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 9pt;
+      line-height: 1.35;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #pdf-template h1 {
+      text-align: center;
+      color: #0b0d17;
+      border-bottom: 2px solid #00d2ff;
+      padding-bottom: 6px;
+      font-size: 15pt;
+      margin: 0 0 10px 0;
+      text-transform: uppercase;
+    }
+
+    #pdf-template h2 {
+      color: #151932;
+      background-color: #f0f4f8;
+      border-left: 4px solid #00d2ff;
+      padding: 4px 8px;
+      margin-top: 12px;
+      margin-bottom: 6px;
+      font-size: 10pt;
+      text-transform: uppercase;
+    }
+
+    .pdf-block {
+      page-break-inside: avoid;
+      margin-bottom: 10px;
+    }
+
+    .pdf-meta-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 8px;
+    }
+
+    .pdf-meta-table td {
+      padding: 4px 6px;
+      border: 1px solid #cccccc;
+      font-size: 9pt;
+    }
+
+    .pdf-meta-table td.label {
+      background-color: #f6f8fa;
+      font-weight: bold;
+      width: 25%;
+    }
+
+    table.pdf-data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+      margin-bottom: 8px;
+      font-size: 8.5pt;
+    }
+
+    table.pdf-data-table tr {
+      page-break-inside: avoid;
+    }
+
+    table.pdf-data-table th {
+      background-color: #151932 !important;
+      color: #ffffff !important;
+      border: 1px solid #151932;
+      padding: 5px;
+      text-align: left;
+      font-weight: bold;
+    }
+
+    table.pdf-data-table td {
+      border: 1px solid #cccccc;
+      padding: 4px 5px;
+      vertical-align: top;
+      color: #000000 !important;
+    }
+
+    table.pdf-data-table tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .pdf-correct {
+      color: #008800 !important;
+      font-weight: bold;
+    }
+
+    .pdf-wrong {
+      color: #cc0000 !important;
+      font-weight: bold;
+    }
+
+    .violation-box {
+      border: 1px solid #cc0000;
+      background-color: #fff0f0;
+      padding: 6px 8px;
+      margin-top: 6px;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>ASTRONAUT CLEARANCE EXAM</h1>
+      <p>Mission Control Qualification Assessment</p>
+      <button id="surrender-btn" class="surrender-btn" onclick="surrenderExam()">🏳️ SURRENDER & GENERATE PDF</button>
+    </header>
+
+    <!-- PAGE 1: REGISTRATION -->
+    <div id="page-1" class="reg-card">
+      <h2>Flight Crew Registration</h2>
+      <p style="font-size: 0.9rem; color: var(--warning-color);">⚠️ Note: Single Entry Protocol active. Tab switches and external site exits are logged.</p>
+      
+      <div class="form-group">
+        <label for="team-name">Squadron / Team Name:</label>
+        <input type="text" id="team-name" placeholder="e.g., Artemis XI" required>
+      </div>
+      <div class="form-group">
+        <label for="astro-1">Astronaut Candidate 1 (Commander):</label>
+        <input type="text" id="astro-1" placeholder="Full Name" required>
+      </div>
+      <div class="form-group">
+        <label for="astro-2">Astronaut Candidate 2 (Pilot):</label>
+        <input type="text" id="astro-2" placeholder="Full Name" required>
+      </div>
+      <div class="form-group">
+        <label for="astro-3">Astronaut Candidate 3 (Specialist):</label>
+        <input type="text" id="astro-3" placeholder="Full Name (Optional)">
+      </div>
+
+      <button class="btn-submit" onclick="startExam()">BEGIN EXAM (GO TO PAGE 2)</button>
+    </div>
+
+    <!-- PAGE 2: CENTRIPETAL FORCE WORD PROBLEMS (PART 1 - MAX 4 ATTEMPTS) -->
+    <section class="exam-section" id="page-2">
+      <h2>Page 2: Centripetal Force Problems (Part 1 Qualification)</h2>
+      <p class="format-hint">📌 <strong>Format Requirement:</strong> Write all answers in scientific notation (e.g., <code>1.23e4</code> or <code>1.23x10^4</code>). Max 4 attempts allowed.</p>
+      
+      <div class="hud-display">
+        <span>Timer Left: <span id="timer-display-p2" style="color: var(--warning-color);">07:00</span></span>
+        <span>Attempt #: <span id="attempt-num-display" style="color: var(--accent-color);">1 / 4</span></span>
+        <span>Pass Requirement: <span style="color: var(--success-color);">≥ 3/5 Correct</span></span>
+        <span>Tab Exits: <span id="exit-counter-p2" style="color: var(--danger-color);">0</span></span>
+      </div>
+
+      <div class="problem-card">
+        <p><strong>Problem 1 (Centripetal Force):</strong> An orbital centrifuge module of mass <i>m</i> = 4.5 × 10<sup>3</sup> kg rotates at a tangential speed of <i>v</i> = 4.0 × 10<sup>1</sup> m/s along a circular track of radius <i>r</i> = 2.0 × 10<sup>2</sup> m. Calculate the centripetal force required.</p>
+        <label for="p2-q1">Centripetal Force (<i>F<sub>c</sub></i>): </label><br>
+        <input type="text" id="p2-q1" placeholder="Enter scientific notation"> N
+      </div>
+
+      <div class="problem-card">
+        <p><strong>Problem 2 (Finding Tangential Velocity):</strong> A repair drone of mass <i>m</i> = 2.5 × 10<sup>2</sup> kg rotates around a space station at a radius of <i>r</i> = 1.5 × 10<sup>2</sup> m under a maximum tether tension of <i>F<sub>c</sub></i> = 6.0 × 10<sup>3</sup> N. Calculate the maximum safe orbital velocity.</p>
+        <label for="p2-q2">Velocity (<i>v</i>): </label><br>
+        <input type="text" id="p2-q2" placeholder="Enter scientific notation"> m/s
+      </div>
+
+      <div class="problem-card">
+        <p><strong>Problem 3 (Centripetal Acceleration):</strong> A pilot in a G-force centrifuge experiences a centripetal force of <i>F<sub>c</sub></i> = 4.2 × 10<sup>3</sup> N. If the candidate's mass is <i>m</i> = 7.0 × 10<sup>1</sup> kg, compute the centripetal acceleration <i>a<sub>c</sub></i>.</p>
+        <label for="p2-q3">Centripetal Acceleration (<i>a<sub>c</sub></i>): </label><br>
+        <input type="text" id="p2-q3" placeholder="Enter scientific notation"> m/s²
+      </div>
+
+      <div class="problem-card">
+        <p><strong>Problem 4 (Determining Orbital Radius):</strong> A satellite of mass <i>m</i> = 1.8 × 10<sup>3</sup> kg traveling at speed <i>v</i> = 7.5 × 10<sup>3</sup> m/s experiences a centripetal force of <i>F<sub>c</sub></i> = 1.25 × 10<sup>4</sup> N. Calculate the radius of its circular orbit.</p>
+        <label for="p2-q4">Radius (<i>r</i>): </label><br>
+        <input type="text" id="p2-q4" placeholder="Enter scientific notation"> m
+      </div>
+
+      <div class="problem-card">
+        <p><strong>Problem 5 (Required Speed):</strong> An artificial gravity ring of radius <i>r</i> = 8.0 × 10<sup>1</sup> m must produce a centripetal acceleration of <i>a<sub>c</sub></i> = 9.8 × 10<sup>0</sup> m/s². Calculate the required tangential linear velocity <i>v</i>.</p>
+        <label for="p2-q5">Required Speed (<i>v</i>): </label><br>
+        <input type="text" id="p2-q5" placeholder="Enter scientific notation"> m/s
+      </div>
+
+      <button class="btn-submit" onclick="verifyAndProceedToPage3()">VERIFY & PROCEED TO PAGE 3</button>
+    </section>
+
+    <!-- PAGE 3: GRAVITATIONAL POTENTIAL ENERGY IN OUTER SPACE (SCIENTIFIC NOTATION REQUIRED) -->
+    <section class="exam-section" id="page-3">
+      <h2>Page 3: Gravitational Potential Energy (<i>U<sub>g</sub></i> = -<i>G · M · m / r</i>)</h2>
+      <p>Use Universal Gravitational Constant <i>G</i> = 6.674 × 10<sup>-11</sup> N·m<sup>2</sup>/kg<sup>2</sup>.</p>
+      <p class="format-hint">📌 <strong>Format Requirement:</strong> Write all answers in scientific notation (e.g., <code>-1.23e10</code> or <code>1.23x10^10</code>).</p>
+
+      <div class="problem-card">
+        <p><strong>Problem 1 (GPE relative to Earth):</strong> A spacecraft of mass <i>m</i> = 2.0 × 10<sup>3</sup> kg is located at a distance of <i>r</i> = 1.2 × 10<sup>7</sup> m from Earth's center (Mass <i>M</i> = 5.97 × 10<sup>24</sup> kg). Calculate the absolute Gravitational Potential Energy (<i>U<sub>g</sub></i>).</p>
+        <label for="p3-q1">GPE (<i>U<sub>g</sub></i>): </label><br>
+        <input type="text" id="p3-q1" placeholder="Enter scientific notation"> Joules
+      </div>
+
+      <div class="problem-card">
+        <p><strong>Problem 2 (Energy to Shift Orbit):</strong> Calculate the change in gravitational potential energy (Δ<i>U<sub>g</sub></i>) when a probe of mass <i>m</i> = 1.0 × 10<sup>3</sup> kg moves from orbital distance <i>r<sub>i</sub></i> = 7.0 × 10<sup>6</sup> m to <i>r<sub>f</sub></i> = 1.4 × 10<sup>7</sup> m around Earth (<i>M</i> = 5.97 × 10<sup>24</sup> kg).</p>
+        <label for="p3-q2">Δ<i>U<sub>g</sub></i>: </label><br>
+        <input type="text" id="p3-q2" placeholder="Enter scientific notation"> Joules
+      </div>
+
+      <div class="problem-card">
+        <p><strong>Problem 3 (Lunar Surface Potential Energy):</strong> Determine the gravitational potential energy of a lander of mass <i>m</i> = 5.0 × 10<sup>2</sup> kg resting on the Moon's surface (<i>M</i> = 7.35 × 10<sup>22</sup> kg, <i>r</i> = 1.74 × 10<sup>6</sup> m).</p>
+        <label for="p3-q3">GPE (<i>U<sub>g</sub></i>): </label><br>
+        <input type="text" id="p3-q3" placeholder="Enter scientific notation"> Joules
+      </div>
+
+      <div class="problem-card">
+        <p><strong>Problem 4 (Deep Space Probe near Jupiter):</strong> A deep space probe of mass <i>m</i> = 8.0 × 10<sup>2</sup> kg approaches Jupiter (<i>M</i> = 1.90 × 10<sup>27</sup> kg) at a distance of <i>r</i> = 5.0 × 10<sup>8</sup> m. Compute its gravitational potential energy.</p>
+        <label for="p3-q4">GPE (<i>U<sub>g</sub></i>): </label><br>
+        <input type="text" id="p3-q4" placeholder="Enter scientific notation"> Joules
+      </div>
+
+      <div class="problem-card">
+        <p><strong>Problem 5 (Escape Energy Concept):</strong> Determine the minimum energy required to completely free a satellite of mass <i>m</i> = 1.5 × 10<sup>3</sup> kg from Earth's gravity (<i>M</i> = 5.97 × 10<sup>24</sup> kg) starting from an orbital radius of <i>r</i> = 8.0 × 10<sup>6</sup> m.</p>
+        <label for="p3-q5">Escape Energy Required: </label><br>
+        <input type="text" id="p3-q5" placeholder="Enter scientific notation"> Joules
+      </div>
+
+      <button class="btn-submit" onclick="goToPage(4)">PROCEED TO PAGE 4</button>
+    </section>
+
+    <!-- PAGE 4: PLANETARY GRAVITATIONAL FORCE RANKING & ACCELERATION (WITH EXPLANATION FIELD) -->
+    <section class="exam-section" id="page-4">
+      <h2>Page 4: Planetary Gravitational Analysis & Orbital Navigation</h2>
+      <p>A moon of mass <i>m</i><sub>moon</sub> = 7.35 × 10<sup>22</sup> kg orbits 5 surrounding candidate planets, each at a different orbital distance <i>r</i> (Gravitational Constant <i>G</i> = 6.674 × 10<sup>-11</sup> N·m<sup>2</sup>/kg<sup>2</sup>).</p>
+
+      <p>1. Calculate the gravitational force (<i>F<sub>g</sub> = G · M · m<sub>moon</sub> / r<sup>2</sup></i>) for each planet using its specific mass and radius. Then drag and drop to rank the planets from <strong>Strongest Gravitational Force (Top)</strong> to <strong>Weakest Gravitational Force (Bottom)</strong>.</p>
+
+      <ul class="celestial-list" id="sortable-list">
+        <li class="celestial-item" draggable="true" data-id="planet-saturn">
+          <div><span class="rank-badge">1</span>🪐 <strong>Saturn-Class Planet:</strong> <i>M</i> = 5.68 × 10<sup>26</sup> kg | <i>r</i> = 1.20 × 10<sup>9</sup> m</div>
+        </li>
+        <li class="celestial-item" draggable="true" data-id="planet-mars">
+          <div><span class="rank-badge">2</span>🔴 <strong>Mars-Class Planet:</strong> <i>M</i> = 6.42 × 10<sup>23</sup> kg | <i>r</i> = 2.00 × 10<sup>8</sup> m</div>
+        </li>
+        <li class="celestial-item" draggable="true" data-id="planet-jupiter">
+          <div><span class="rank-badge">3</span>🪐 <strong>Jupiter-Class Planet:</strong> <i>M</i> = 1.90 × 10<sup>27</sup> kg | <i>r</i> = 7.50 × 10<sup>8</sup> m</div>
+        </li>
+        <li class="celestial-item" draggable="true" data-id="planet-earth">
+          <div><span class="rank-badge">4</span>🌍 <strong>Earth-Class Planet:</strong> <i>M</i> = 5.97 × 10<sup>24</sup> kg | <i>r</i> = 3.84 × 10<sup>8</sup> m</div>
+        </li>
+        <li class="celestial-item" draggable="true" data-id="planet-uranus">
+          <div><span class="rank-badge">5</span>🪐 <strong>Uranus-Class Planet:</strong> <i>M</i> = 8.68 × 10<sup>25</sup> kg | <i>r</i> = 2.80 × 10<sup>9</sup> m</div>
+        </li>
+      </ul>
+
+      <div class="problem-card" style="margin-top: 25px;">
+        <p><strong>Strongest Force Identification & Acceleration Solution:</strong></p>
+        
+        <div class="form-group">
+          <label for="p4-strongest-planet">Select the Planet with the STRONGEST gravitational force towards the moon:</label>
+          <select id="p4-strongest-planet">
+            <option value="">-- Choose Strongest Planet --</option>
+            <option value="Jupiter-Class Planet">Jupiter-Class Planet</option>
+            <option value="Earth-Class Planet">Earth-Class Planet</option>
+            <option value="Saturn-Class Planet">Saturn-Class Planet</option>
+            <option value="Uranus-Class Planet">Uranus-Class Planet</option>
+            <option value="Mars-Class Planet">Mars-Class Planet</option>
+          </select>
+        </div>
+
+        <div style="margin-top: 15px;">
+          <label for="p4-strongest-acc">Calculate the Moon's Acceleration (<i>a<sub>g</sub> = F<sub>g</sub> / m<sub>moon</sub></i>) under this strongest planet: </label><br>
+          <input type="text" id="p4-strongest-acc" placeholder="e.g. 9.87e-3 or 0.00987"> m/s²
+        </div>
+
+        <div class="form-group" style="margin-top: 15px;">
+          <label for="p4-explanation"><strong>Scientific Justification & Reasoning:</strong> Explain why you chose this planet as having the strongest gravitational force. Reference the mathematical relationship between mass (<i>M</i>) and orbital distance (<i>r</i>):</label>
+          <textarea id="p4-explanation" placeholder="Provide your conceptual physical explanation here..."></textarea>
+        </div>
+      </div>
+
+      <button class="btn-submit" onclick="submitFinalExam()">SUBMIT & GENERATE FINAL PDF</button>
+    </section>
+
+    <!-- Results Display -->
+    <div id="results-modal" class="results-modal">
+      <h2 id="result-status">Exam Submission Complete</h2>
+      <p id="result-details"></p>
+      <button class="btn-submit" onclick="downloadPDFReport()">DOWNLOAD OFFICIAL PDF REPORT</button>
+    </div>
+  </div>
+
+  <!-- PDF TEMPLATE -->
+  <div id="pdf-template">
+    <div class="pdf-block">
+      <h1>FLIGHT CLEARANCE OFFICIAL EVALUATION REPORT</h1>
+      
+      <table class="pdf-meta-table">
+        <tr>
+          <td class="label">Squadron / Team Name:</td>
+          <td><strong id="pdf-team"></strong></td>
+          <td class="label">Submission Status:</td>
+          <td><span id="pdf-status"></span></td>
+        </tr>
+        <tr>
+          <td class="label">Crew Candidates:</td>
+          <td colspan="3"><span id="pdf-crew"></span></td>
+        </tr>
+      </table>
+
+      <div class="violation-box">
+        <strong>⚠️ SITE EXITS & CHEATING MONITORING RECORD:</strong><br>
+        Total Recorded Site Exits / Tab Switches / Window Leaves: <strong id="pdf-exits" style="color:#cc0000;">0</strong> time(s).
+      </div>
+    </div>
+
+    <!-- Page 2 PDF Table -->
+    <div class="pdf-block">
+      <h2>Page 2: Centripetal Force Word Problems (Recorded Attempt: <span id="pdf-recorded-attempt-num">1</span>)</h2>
+      
+      <p style="font-size: 8.5pt; margin-bottom: 6px;">
+        <strong>Part 1 Attempt Qualification Log:</strong><br>
+        • Total Attempts Taken: <strong id="pdf-total-attempts-taken">1</strong> (Limit: 4)<br>
+        • Recorded Attempt Evaluation: <strong id="pdf-recorded-attempt-status">Attempt #1 Recorded</strong>
+      </p>
+
+      <table class="pdf-data-table">
+        <thead>
+          <tr>
+            <th style="width: 35%;">Problem Task</th>
+            <th style="width: 25%;">Submitted Answer</th>
+            <th style="width: 25%;">Expected Answer</th>
+            <th style="width: 15%;">Result</th>
+          </tr>
+        </thead>
+        <tbody id="pdf-p2-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Page 3 PDF Table -->
+    <div class="pdf-block">
+      <h2>Page 3: Gravitational Potential Energy (<i>U<sub>g</sub></i>) Problems</h2>
+      <table class="pdf-data-table">
+        <thead>
+          <tr>
+            <th style="width: 35%;">Problem Task</th>
+            <th style="width: 25%;">Submitted Answer</th>
+            <th style="width: 25%;">Expected Answer</th>
+            <th style="width: 15%;">Result</th>
+          </tr>
+        </thead>
+        <tbody id="pdf-p3-tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Page 4 PDF Table (WITH EXPLANATION EVALUATION) -->
+    <div class="pdf-block">
+      <h2>Page 4: Deep Space Gravitational Force Ranking & Acceleration</h2>
+      
+      <p style="font-size: 8.5pt; margin-bottom: 6px;">
+        <strong>Reference Solution Keys for Gravitational Force (<i>F<sub>g</sub></i>) on Moon:</strong><br>
+        • Earth-Class (<i>r</i> = 3.84 × 10<sup>8</sup> m): <i>F<sub>g</sub></i> = 1.98 × 10<sup>20</sup> N<br>
+        • Jupiter-Class (<i>r</i> = 7.50 × 10<sup>8</sup> m): <i>F<sub>g</sub></i> = 1.66 × 10<sup>20</sup> N<br>
+        • Saturn-Class (<i>r</i> = 1.20 × 10<sup>9</sup> m): <i>F<sub>g</sub></i> = 1.93 × 10<sup>19</sup> N<br>
+        • Mars-Class (<i>r</i> = 2.00 × 10<sup>8</sup> m): <i>F<sub>g</sub></i> = 7.88 × 10<sup>18</sup> N<br>
+        • Uranus-Class (<i>r</i> = 2.80 × 10<sup>9</sup> m): <i>F<sub>g</sub></i> = 5.42 × 10<sup>17</sup> N
+      </p>
+
+      <table class="pdf-data-table">
+        <thead>
+          <tr>
+            <th style="width: 35%;">Assessment Item</th>
+            <th style="width: 25%;">Submitted Value</th>
+            <th style="width: 25%;">Expected Correct Value</th>
+            <th style="width: 15%;">Result</th>
+          </tr>
+        </thead>
+        <tbody id="pdf-p4-tbody"></tbody>
+      </table>
+
+      <div style="border: 1px solid #cccccc; padding: 8px; margin-top: 8px; background-color: #fcfcfc;">
+        <strong>Candidate Explanation / Justification Provided:</strong>
+        <p id="pdf-p4-explanation-text" style="font-style: italic; font-size: 8.5pt; margin: 4px 0 0 0; color: #333333;"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let teamName = "";
+    let crewMembers = [];
+    let tabExitCount = 0;
+    let isSurrendered = false;
+
+    // Timer & Attempt Tracking for Part 1 (Page 2)
+    const MAX_ATTEMPTS = 4;
+    let p2TimerLeft = 420; // 7 minutes
+    let p2TimerInterval = null;
+    let currentAttempt = 1;
+    let recordedAttemptData = null;
+
+    // Helper: Parse Scientific Notation string inputs into standard float values
+    function parseScientificInput(valStr) {
+      if (!valStr || typeof valStr !== 'string') return NaN;
+      let cleaned = valStr.trim().toLowerCase();
+      
+      cleaned = cleaned.replace(/x10\^?/gi, 'e').replace(/\*10\^?/gi, 'e');
+      
+      const parsed = parseFloat(cleaned);
+      return parsed;
+    }
+
+    // Helper: Format number into clean Scientific Notation for display
+    function formatToSciNotation(val) {
+      if (isNaN(val) || val === null) return "No Response";
+      return val.toExponential(2);
+    }
+
+    // Track tab switches & exits
+    function incrementExitCount() {
+      if (document.getElementById("page-1").style.display === "none") {
+        tabExitCount++;
+        const el = document.getElementById("exit-counter-p2");
+        if (el) el.textContent = tabExitCount;
+      }
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) incrementExitCount();
+    });
+    window.addEventListener("blur", () => {
+      incrementExitCount();
+    });
+
+    function startExam() {
+      const teamInput = document.getElementById("team-name").value.trim();
+      const a1 = document.getElementById("astro-1").value.trim();
+      const a2 = document.getElementById("astro-2").value.trim();
+      const a3 = document.getElementById("astro-3").value.trim();
+
+      if (!teamInput || !a1 || !a2) {
+        alert("Please enter Team Name and at least 2 Astronaut Candidate names.");
+        return;
+      }
+
+      teamName = teamInput;
+      crewMembers = [a1, a2];
+      if (a3) crewMembers.push(a3);
+
+      document.getElementById("page-1").style.display = "none";
+      document.getElementById("page-2").classList.add("active");
+      document.getElementById("surrender-btn").style.display = "block";
+
+      startP2Timer();
+      initDragAndDrop();
+    }
+
+    function startP2Timer() {
+      clearInterval(p2TimerInterval);
+      p2TimerLeft = 420;
+      const display = document.getElementById("timer-display-p2");
+      
+      p2TimerInterval = setInterval(() => {
+        p2TimerLeft--;
+        const mins = String(Math.floor(p2TimerLeft / 60)).padStart(2, '0');
+        const secs = String(p2TimerLeft % 60).padStart(2, '0');
+        display.textContent = `${mins}:${secs}`;
+
+        if (p2TimerLeft <= 0) {
+          clearInterval(p2TimerInterval);
+          alert("Time is up for Part 1! Verifying responses...");
+          verifyAndProceedToPage3();
+        }
+      }, 1000);
+    }
+
+    function verifyAndProceedToPage3() {
+      const p2Expected = [36000, 60, 60, 8100000, 28];
+      const p2SubmittedRaw = [
+        document.getElementById("p2-q1").value,
+        document.getElementById("p2-q2").value,
+        document.getElementById("p2-q3").value,
+        document.getElementById("p2-q4").value,
+        document.getElementById("p2-q5").value
+      ];
+
+      const p2Submitted = p2SubmittedRaw.map(parseScientificInput);
+
+      let correctCount = 0;
+      p2Submitted.forEach((sub, i) => {
+        const exp = p2Expected[i];
+        if (!isNaN(sub) && Math.abs(sub - exp) / exp <= 0.03) {
+          correctCount++;
+        }
+      });
+
+      // Only the 1st or 2nd attempt is saved for the official PDF record
+      if (currentAttempt <= 2) {
+        recordedAttemptData = {
+          attemptNum: currentAttempt,
+          submittedRaw: [...p2SubmittedRaw],
+          submitted: [...p2Submitted],
+          score: correctCount,
+          passed: correctCount >= 3
+        };
+      }
+
+      if (correctCount >= 3) {
+        clearInterval(p2TimerInterval);
+        alert(`Qualification Passed! Score: ${correctCount}/5. Proceeding to Page 3.`);
+        goToPage(3);
+      } else if (currentAttempt >= MAX_ATTEMPTS) {
+        clearInterval(p2TimerInterval);
+        alert(`Maximum Limit Reached (Attempt ${currentAttempt}/${MAX_ATTEMPTS}). Score: ${correctCount}/5.\n\nAllowing progression to Page 3.`);
+        goToPage(3);
+      } else {
+        alert(`Qualification Failed! Score: ${correctCount}/5 (Required: ≥ 3/5).\n\nResetting Part 1 for Attempt #${currentAttempt + 1} of ${MAX_ATTEMPTS}...`);
+        currentAttempt++;
+        document.getElementById("attempt-num-display").textContent = `${currentAttempt} / ${MAX_ATTEMPTS}`;
+        
+        for (let i = 1; i <= 5; i++) {
+          document.getElementById(`p2-q${i}`).value = "";
+        }
+        startP2Timer();
+      }
+    }
+
+    function goToPage(pageNum) {
+      document.querySelectorAll(".exam-section").forEach(sec => sec.classList.remove("active"));
+      document.getElementById(`page-${pageNum}`).classList.add("active");
+      window.scrollTo(0, 0);
+    }
+
+    // Drag and Drop Logic
+    function initDragAndDrop() {
+      const list = document.getElementById("sortable-list");
+      let draggedItem = null;
+
+      list.addEventListener("dragstart", (e) => {
+        draggedItem = e.target.closest(".celestial-item");
+        draggedItem.classList.add("dragging");
+      });
+
+      list.addEventListener("dragend", () => {
+        if (draggedItem) {
+          draggedItem.classList.remove("dragging");
+          draggedItem = null;
+          updateRankBadges();
+        }
+      });
+
+      list.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(list, e.clientY);
+        if (afterElement == null) {
+          list.appendChild(draggedItem);
+        } else {
+          list.insertBefore(draggedItem, afterElement);
+        }
+      });
+    }
+
+    function getDragAfterElement(container, y) {
+      const draggableElements = [...container.querySelectorAll(".celestial-item:not(.dragging)")];
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    function updateRankBadges() {
+      const items = document.querySelectorAll("#sortable-list .celestial-item");
+      items.forEach((item, index) => {
+        item.querySelector(".rank-badge").textContent = index + 1;
+      });
+    }
+
+    function surrenderExam() {
+      if (confirm("Are you sure you want to surrender? Your recorded responses (including incomplete ones) will be evaluated and exported to PDF.")) {
+        isSurrendered = true;
+        
+        if (!recordedAttemptData) {
+          const p2SubmittedRaw = [
+            document.getElementById("p2-q1").value,
+            document.getElementById("p2-q2").value,
+            document.getElementById("p2-q3").value,
+            document.getElementById("p2-q4").value,
+            document.getElementById("p2-q5").value
+          ];
+          recordedAttemptData = {
+            attemptNum: currentAttempt,
+            submittedRaw: p2SubmittedRaw,
+            submitted: p2SubmittedRaw.map(parseScientificInput),
+            score: 0,
+            passed: false
+          };
+        }
+        submitFinalExam();
+      }
+    }
+
+    function submitFinalExam() {
+      clearInterval(p2TimerInterval);
+      const p2Expected = [36000, 60, 60, 8100000, 28];
+
+      // Page 3 Solutions
+      const p3Expected = [-6.64e10, 2.84e10, -1.41e9, -2.03e11, 7.47e10];
+      const p3SubmittedRaw = [
+        document.getElementById("p3-q1").value,
+        document.getElementById("p3-q2").value,
+        document.getElementById("p3-q3").value,
+        document.getElementById("p3-q4").value,
+        document.getElementById("p3-q5").value
+      ];
+      const p3Submitted = p3SubmittedRaw.map(parseScientificInput);
+
+      // Page 4 Solutions
+      const correctRanking = ["planet-earth", "planet-jupiter", "planet-saturn", "planet-mars", "planet-uranus"];
+      const currentRanking = [...document.querySelectorAll("#sortable-list .celestial-item")].map(el => el.dataset.id);
+      const rankingCorrect = JSON.stringify(correctRanking) === JSON.stringify(currentRanking);
+
+      const subPlanet = document.getElementById("p4-strongest-planet").value;
+      const planetCorrect = subPlanet === "Earth-Class Planet";
+
+      const subAccRaw = document.getElementById("p4-strongest-acc").value;
+      const subAcc = parseScientificInput(subAccRaw);
+      const expAcc = 0.00269;
+      const accCorrect = !isNaN(subAcc) && Math.abs(subAcc - expAcc) / expAcc <= 0.05;
+
+      const userExplanation = document.getElementById("p4-explanation").value.trim();
+
+      // Populate PDF Header
+      document.getElementById("pdf-team").textContent = teamName || "Unregistered Team";
+      document.getElementById("pdf-crew").textContent = crewMembers.length ? crewMembers.join(", ") : "N/A";
+      document.getElementById("pdf-status").textContent = isSurrendered ? "SURRENDERED EARLY" : "COMPLETED & SUBMITTED";
+      document.getElementById("pdf-exits").textContent = tabExitCount;
+
+      // Populate Attempt Logs in PDF Header
+      document.getElementById("pdf-total-attempts-taken").textContent = currentAttempt;
+      document.getElementById("pdf-recorded-attempt-num").textContent = recordedAttemptData ? recordedAttemptData.attemptNum : 1;
+      document.getElementById("pdf-recorded-attempt-status").textContent = recordedAttemptData ? `Attempt #${recordedAttemptData.attemptNum} Recorded (Score: ${recordedAttemptData.score}/5)` : "Attempt #1 Recorded";
+
+      // Fill Page 2 Table
+      const p2Tbody = document.getElementById("pdf-p2-tbody");
+      const p2Titles = [
+        "P1: Centripetal Force",
+        "P2: Tangential Velocity",
+        "P3: Centripetal Acceleration",
+        "P4: Orbital Radius",
+        "P5: Required Speed"
+      ];
+      p2Tbody.innerHTML = "";
+      
+      const activeP2Parsed = recordedAttemptData ? recordedAttemptData.submitted : [
+        parseScientificInput(document.getElementById("p2-q1").value),
+        parseScientificInput(document.getElementById("p2-q2").value),
+        parseScientificInput(document.getElementById("p2-q3").value),
+        parseScientificInput(document.getElementById("p2-q4").value),
+        parseScientificInput(document.getElementById("p2-q5").value)
+      ];
+
+      const activeP2Raw = recordedAttemptData ? recordedAttemptData.submittedRaw : [
+        document.getElementById("p2-q1").value,
+        document.getElementById("p2-q2").value,
+        document.getElementById("p2-q3").value,
+        document.getElementById("p2-q4").value,
+        document.getElementById("p2-q5").value
+      ];
+
+      p2Titles.forEach((title, i) => {
+        const subVal = activeP2Parsed[i];
+        const rawStr = activeP2Raw[i];
+        const exp = p2Expected[i];
+        const isCorrect = !isNaN(subVal) && Math.abs(subVal - exp) / exp <= 0.03;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${title}</strong></td>
+          <td>${rawStr || "No Response"}</td>
+          <td>${formatToSciNotation(exp)}</td>
+          <td><span class="${isCorrect ? 'pdf-correct' : 'pdf-wrong'}">${isCorrect ? 'CORRECT' : 'WRONG'}</span></td>
+        `;
+        p2Tbody.appendChild(tr);
+      });
+
+      // Fill Page 3 Table
+      const p3Tbody = document.getElementById("pdf-p3-tbody");
+      const p3Titles = [
+        "P1: Absolute GPE",
+        "P2: Orbital Shift ΔUg",
+        "P3: Lunar Surface GPE",
+        "P4: Jupiter Probe GPE",
+        "P5: Escape Energy"
+      ];
+      p3Tbody.innerHTML = "";
+      p3Titles.forEach((title, i) => {
+        const subVal = p3Submitted[i];
+        const rawStr = p3SubmittedRaw[i];
+        const exp = p3Expected[i];
+        const isCorrect = !isNaN(subVal) && Math.abs(subVal - exp) / Math.abs(exp) <= 0.05;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${title}</strong></td>
+          <td>${rawStr || "No Response"}</td>
+          <td>${formatToSciNotation(exp)} J</td>
+          <td><span class="${isCorrect ? 'pdf-correct' : 'pdf-wrong'}">${isCorrect ? 'CORRECT' : 'WRONG'}</span></td>
+        `;
+        p3Tbody.appendChild(tr);
+      });
+
+      // Fill Page 4 Table & Explanation
+      const p4Tbody = document.getElementById("pdf-p4-tbody");
+      const planetNames = {
+        'planet-earth': 'Earth-Class',
+        'planet-jupiter': 'Jupiter-Class',
+        'planet-saturn': 'Saturn-Class',
+        'planet-mars': 'Mars-Class',
+        'planet-uranus': 'Uranus-Class'
+      };
+      const userRankStr = currentRanking.map(id => planetNames[id] || id).join(" > ");
+
+      p4Tbody.innerHTML = `
+        <tr>
+          <td><strong>Planetary Force Ranking</strong></td>
+          <td>${userRankStr}</td>
+          <td>Earth > Jupiter > Saturn > Mars > Uranus</td>
+          <td><span class="${rankingCorrect ? 'pdf-correct' : 'pdf-wrong'}">${rankingCorrect ? 'CORRECT' : 'WRONG'}</span></td>
+        </tr>
+        <tr>
+          <td><strong>Strongest Planet ID</strong></td>
+          <td>${subPlanet || "No Selection"}</td>
+          <td>Earth-Class Planet</td>
+          <td><span class="${planetCorrect ? 'pdf-correct' : 'pdf-wrong'}">${planetCorrect ? 'CORRECT' : 'WRONG'}</span></td>
+        </tr>
+        <tr>
+          <td><strong>Strongest Acceleration</strong></td>
+          <td>${subAccRaw || "No Response"}</td>
+          <td>2.69e-3 m/s²</td>
+          <td><span class="${accCorrect ? 'pdf-correct' : 'pdf-wrong'}">${accCorrect ? 'CORRECT' : 'WRONG'}</span></td>
+        </tr>
+      `;
+
+      document.getElementById("pdf-p4-explanation-text").textContent = userExplanation || "[No explanation provided by candidates]";
+
+      // Hide all pages & show results modal
+      document.querySelectorAll(".exam-section").forEach(sec => sec.classList.remove("active"));
+      document.getElementById("results-modal").style.display = "block";
+      document.getElementById("surrender-btn").style.display = "none";
+    }
+
+    function downloadPDFReport() {
+      const element = document.getElementById("pdf-template");
+      element.style.display = "block";
+
+      const opt = {
+        margin:       [0.3, 0.3, 0.3, 0.3],
+        filename:     `Flight_Clearance_${(teamName || 'Exam').replace(/\s+/g, '_')}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+
+      html2pdf().set(opt).from(element).save().then(() => {
+        element.style.display = "none";
+      });
+    }
+  </script>
+</body>
+</html>
